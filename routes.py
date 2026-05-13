@@ -55,6 +55,14 @@ def admin_promote_user(user_id):
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
 
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+def admin_delete_user(user_id):
+    """Permanently delete a user from the system."""
+    if user_id in USERS:
+        del USERS[user_id]
+        return jsonify({"status": "deleted", "user_id": user_id})
+    return jsonify({"error": "not found"}), 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)
