@@ -54,7 +54,14 @@ def admin_promote_user(user_id):
 @require_admin
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
-
+@app.route('/orders/<int:order_id>')
+@login_required
+def get_order_detail(order_id):
+    """Fetch full order details including total and items."""
+    order = get_order(order_id)
+    if not order:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(order)
 
 if __name__ == '__main__':
     app.run(debug=True)
