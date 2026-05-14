@@ -1,9 +1,118 @@
-# sentinelpr-demo
-Empirical proof that LLM agents catch security bugs static analyzers can't
-# SentinelPR Demo
+# SentinelPR Demo — Proving LLM Agents Catch What Static Analyzers Can't
 
-This repo demonstrates that LLM-agent security review catches Bucket 2 vulnerabilities that static analyzers (Semgrep, Bandit) cannot.
+This repository is an empirical test of a single claim:
 
-(Full README with comparison results will be added after PRs are tested.)
+> **Pattern-matching static analyzers (Semgrep, Bandit) cannot detect intent-level security vulnerabilities. An LLM agent can.**
 
-#blank line 1
+It contains a small Flask app with a consistent, correct authorization pattern — then five pull requests, each introducing one *intent-level* ("Bucket 2") vulnerability. Each PR was reviewed by three tools: **Bandit**, **Semgrep**, and **[SentinelPR](https://github.com/Aryan2659/sentinelpr-)** (an agentic LLM security reviewer).
+
+## Results
+
+| PR | Vulnerability | OWASP | Bandit | Semgrep | SentinelPR |
+|----|--------------|-------|--------|---------|------------|
+| 1 | Admin endpoint missing authorization check | A01 Broken Access Control | ❌ | ❌ | ✅ |
+| 2 | IDOR — order fetched without ownership check | A01 Broken Access Control | ❌ | ❌ | ✅ |
+| 3 | Privilege escalation — `role` accepted from request body | A01 Broken Access Control | ❌ | ❌ | ✅ |
+| 4 | Authentication bypass via flawed boolean logic | A07 Identification & Authentication Failures | ❌ | ❌ | ✅ |
+| 5 | Business logic flaw — coupon redeemable unlimited times | A04 Insecure Design | ❌ | ❌ | ✅ |
+
+**SentinelPR: 5/5. Bandit: 0/5. Semgrep: 0/5.**
+
+Bandit and Semgrep were not silent — on every PR they correctly flagged the same two *pattern-level* ("Bucket 1") issues: a hardcoded `secret_key` and `debug=True`. That is exactly the point. They do what they are designed to do — match known-dangerous patterns — and the intent-level bug in each PR has no pattern to match.
+
+## Why these bugs are invisible to pattern matching
+
+Every vulnerability here shares one property: **the bug is the absence of code, or the wrong intent behind code that is individually valid.**
+
+- A missing `@require_admin` decorator is not a pattern — it's a *gap*. There is nothing to match.
+- An endpoint that fetches `order_id` without checking ownership uses entirely normal database calls. The vulnerability is the missing comparison, not any line that's present.
+- `if role == "admin" or role != "banned"` is syntactically perfect. Only by reasoning about *what the check is supposed to do* can you see it grants access to everyone.
+
+Static analyzers ask "does this code match a known-bad shape?" Intent-level review asks "does this code do what it should?" Only the second question catches these bugs.
+
+## How SentinelPR caught them
+
+SentinelPR is an agentic reviewer. For each PR it:
+
+1. Reads the diff
+2. **Investigates the rest of the repo with tools** (`read_file`, `search_code`, `list_directory`) — e.g. on PR 1 it searched for `require_admin`, found it on every other admin route, and flagged the new one for breaking the pattern
+3. Passes each finding to a **verification agent** that tries to refute it using codebase evidence
+4. Runs a **cross-file impact agent** to check for second-order effects
+
+The multi-file investigation is what makes intent-level detection possible — the bug in PR 1 is only visible if you compare the new endpoint to its siblings.
+
+---
+
+## PR-by-PR detail
+
+### PR 1 — Broken Access Control
+A new `POST /admin/users/<id>/delete` endpoint was added with no `@require_admin` decorator, while every other admin route in the file has one.
+
+**SentinelPR finding:**
+<!-- SCREENSHOT: pr1 SentinelPR comment -->
+
+
+**Bandit + Semgrep output** (flag only `secret_key` / `debug=True`, miss the access control bug):
+<!-- SCREENSHOT: pr1 bandit + semgrep -->
+
+### PR 2 — IDOR
+`GET /orders/<id>` is gated by `@login_required` but never checks that the order belongs to the requesting user. Any logged-in user can read any order.
+
+**SentinelPR finding:**
+<!-- SCREENSHOT: pr2 SentinelPR comment -->
+
+**Bandit + Semgrep output:**
+<!-- SCREENSHOT: pr2 bandit + semgrep -->
+
+### PR 3 — Privilege Escalation via Input
+`POST /users/<id>/update` passes the entire request body into `update_user(**data)`. A regular user can send `{"role": "admin"}` and promote themselves — and update any user, not just their own account.
+
+**SentinelPR finding:**
+<!-- SCREENSHOT: pr3 SentinelPR comment -->
+
+**Bandit + Semgrep output:**
+<!-- SCREENSHOT: pr3 bandit + semgrep -->
+
+### PR 4 — Authentication Bypass via Logic Error
+`GET /admin/revenue` contains a role check whose boolean logic does not match its stated intent — the condition is structured so that non-admin users pass it.
+
+**SentinelPR finding:**
+<!-- SCREENSHOT: pr4 SentinelPR comment -->
+
+**Bandit + Semgrep output:**
+<!-- SCREENSHOT: pr4 bandit + semgrep -->
+
+### PR 5 — Business Logic Flaw
+`POST /coupons/<code>/redeem` adds the user to the coupon's `redeemed_by` set but never checks whether they're already in it. The same user can redeem one coupon unlimited times.
+
+**SentinelPR finding:**
+<!-- SCREENSHOT: pr5 SentinelPR comment -->
+
+**Bandit + Semgrep output:**
+<!-- SCREENSHOT: pr5 bandit + semgrep -->
+
+---
+
+## Reproducing this
+
+Each vulnerability lives on its own branch (`pr1-missing-admin-check`, `pr2-idor-order-access`, etc.), branched from a clean `main`.
+
+```bash
+git clone https://github.com/Aryan2659/sentinelpr-demo.git
+cd sentinelpr-demo
+git checkout pr1-missing-admin-check
+bandit routes.py
+semgrep --config=auto routes.py
+```
+
+SentinelPR's reviews are visible as inline comments on each pull request in this repository.
+
+## Honest limitations
+
+- This is a small, deliberately constructed test set — not a statistical benchmark. It demonstrates a capability gap; it does not quantify it.
+- LLM review is non-deterministic and can hallucinate. SentinelPR mitigates this with a verification agent, but it is not eliminated.
+- Static analyzers and SentinelPR are **complementary, not competitors.** Bandit and Semgrep catch Bucket 1 issues faster, cheaper, and more reliably than any LLM. The right setup runs both.
+
+## What this is part of
+
+SentinelPR — an agentic GitHub App that reviews pull requests for intent-level security vulnerabilities. Code and architecture: **https://github.com/Aryan2659/sentinelpr-**
