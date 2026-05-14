@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, session
 from auth import login_required, require_admin, current_user_id
 from models import get_user, get_order, update_user, USERS, ORDERS
-
+#
 app = Flask(__name__)
 app.secret_key = "demo-secret-not-for-production"
 
@@ -54,7 +54,16 @@ def admin_promote_user(user_id):
 @require_admin
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
-
+    #
+@app.route('/orders/<int:order_id>')
+@login_required
+def get_order_detail(order_id):
+    """Fetch full order details including total and items."""
+    order = get_order(order_id)
+    if not order:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(order)
+#smtg
 
 if __name__ == '__main__':
     app.run(debug=True)
