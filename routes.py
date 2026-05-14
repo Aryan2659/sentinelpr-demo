@@ -54,6 +54,7 @@ def admin_promote_user(user_id):
 @require_admin
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
+    #
 @app.route('/orders/<int:order_id>')
 @login_required
 def get_order_detail(order_id):
