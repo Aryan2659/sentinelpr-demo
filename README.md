@@ -50,47 +50,65 @@ A new `POST /admin/users/<id>/delete` endpoint was added with no `@require_admin
 
 **SentinelPR finding:**
 
-<img width="2302" height="1666" alt="Screenshot 2026-05-14 191148" src="https://github.com/user-attachments/assets/dc700182-bb17-48df-9378-ac32972acba8" />
+<img width="1628" height="1666" alt="Screenshot 2026-05-14 191148" src="https://github.com/user-attachments/assets/bec5239d-b7a9-4f87-aca6-96d11869c7d1" />
+
 
 
 **Bandit + Semgrep output** (flag only `secret_key` / `debug=True`, miss the access control bug):
+<img width="2988" height="1750" alt="Screenshot 2026-05-14 184735" src="https://github.com/user-attachments/assets/4f4746c0-f402-411c-a3e2-698dab6f26b9" />
+<img width="1982" height="1584" alt="Screenshot 2026-05-14 184802" src="https://github.com/user-attachments/assets/caba35d9-30b0-447c-a69a-8f3186f4b051" />
+
+
 
 
 ### PR 2 — IDOR
 `GET /orders/<id>` is gated by `@login_required` but never checks that the order belongs to the requesting user. Any logged-in user can read any order.
 
 **SentinelPR finding:**
-<!-- SCREENSHOT: pr2 SentinelPR comment -->
+<img width="1589" height="1660" alt="Screenshot 2026-05-14 191212" src="https://github.com/user-attachments/assets/8731af0b-1aee-428f-ab0a-e00b271405bc" />
+
 
 **Bandit + Semgrep output:**
-<!-- SCREENSHOT: pr2 bandit + semgrep -->
+<img width="1824" height="1740" alt="Screenshot 2026-05-14 185214" src="https://github.com/user-attachments/assets/f8e706a7-4515-4997-af3d-1ddb039f6d49" />
+<img width="3044" height="1744" alt="Screenshot 2026-05-14 184833" src="https://github.com/user-attachments/assets/e262fe8c-0fed-4bfd-a34b-17efeee0a4bc" />
+
 
 ### PR 3 — Privilege Escalation via Input
 `POST /users/<id>/update` passes the entire request body into `update_user(**data)`. A regular user can send `{"role": "admin"}` and promote themselves — and update any user, not just their own account.
 
 **SentinelPR finding:**
-<!-- SCREENSHOT: pr3 SentinelPR comment -->
+<img width="1587" height="1654" alt="Screenshot 2026-05-14 191236" src="https://github.com/user-attachments/assets/5c3528b9-722c-4fe9-8bc4-949661b3da97" />
+
 
 **Bandit + Semgrep output:**
-<!-- SCREENSHOT: pr3 bandit + semgrep -->
+<img width="3066" height="1492" alt="Screenshot 2026-05-14 185334" src="https://github.com/user-attachments/assets/99293421-ef1d-4491-806a-7845a0be7101" />
+<img width="3054" height="1622" alt="Screenshot 2026-05-14 185417" src="https://github.com/user-attachments/assets/9c355c36-9a42-4464-8223-c45530d08794" />
+
 
 ### PR 4 — Authentication Bypass via Logic Error
 `GET /admin/revenue` contains a role check whose boolean logic does not match its stated intent — the condition is structured so that non-admin users pass it.
 
 **SentinelPR finding:**
-<!-- SCREENSHOT: pr4 SentinelPR comment -->
+<img width="1581" height="1652" alt="Screenshot 2026-05-14 191301" src="https://github.com/user-attachments/assets/e2daa634-eeb3-4eb6-8cc2-78f51fbabc30" />
+
+
+
 
 **Bandit + Semgrep output:**
-<!-- SCREENSHOT: pr4 bandit + semgrep -->
+<img width="3060" height="1492" alt="Screenshot 2026-05-14 185439" src="https://github.com/user-attachments/assets/d18f72d7-1c57-4509-a1e1-1ffb53d120d0" />
+<img width="2488" height="1632" alt="Screenshot 2026-05-14 185454" src="https://github.com/user-attachments/assets/e66d4808-7e0a-44b0-995e-78d9bdd7ec2a" />
+
 
 ### PR 5 — Business Logic Flaw
 `POST /coupons/<code>/redeem` adds the user to the coupon's `redeemed_by` set but never checks whether they're already in it. The same user can redeem one coupon unlimited times.
 
 **SentinelPR finding:**
-<!-- SCREENSHOT: pr5 SentinelPR comment -->
+<img width="1601" height="1650" alt="Screenshot 2026-05-14 191322" src="https://github.com/user-attachments/assets/6fbb9be2-0e02-433b-80dd-711b18e88268" />
+
 
 **Bandit + Semgrep output:**
-<!-- SCREENSHOT: pr5 bandit + semgrep -->
+<img width="3050" height="1498" alt="Screenshot 2026-05-14 185536" src="https://github.com/user-attachments/assets/5722fde9-8b78-49fb-8590-e7dacfe65c8f" />
+<img width="3028" height="1590" alt="Screenshot 2026-05-14 185550" src="https://github.com/user-attachments/assets/bb127c28-5a5e-48e6-924b-5a6eb2620b4a" />
 
 ---
 
