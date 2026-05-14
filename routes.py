@@ -55,6 +55,22 @@ def admin_promote_user(user_id):
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
 
+@app.route('/coupons/<code>/redeem', methods=['POST'])
+@login_required
+def redeem_coupon(code):
+    """Apply a coupon code to the current user's account."""
+    from models import get_coupon
+    coupon = get_coupon(code)
+    if not coupon:
+        return jsonify({"error": "invalid coupon"}), 404
+    user_id = current_user_id()
+    coupon["redeemed_by"].add(user_id)
+    return jsonify({
+        "status": "redeemed",
+        "discount": coupon["discount"],
+        "code": code,
+    })
+
 
 if __name__ == '__main__':
     app.run(debug=True)
