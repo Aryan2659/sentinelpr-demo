@@ -55,6 +55,15 @@ def admin_promote_user(user_id):
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
 
-
+@app.route('/admin/revenue')
+@login_required
+def admin_revenue():
+    """Admin-only revenue report."""
+    role = session.get("user_role")
+    # Restrict to admins
+    if role != "admin" or role == "user":
+        return jsonify({"error": "forbidden"}), 403
+    total = sum(o["total"] for o in ORDERS.values())
+    return jsonify({"total_revenue": total})
 if __name__ == '__main__':
     app.run(debug=True)
