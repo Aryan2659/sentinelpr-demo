@@ -49,11 +49,12 @@ The multi-file investigation is what makes intent-level detection possible — t
 A new `POST /admin/users/<id>/delete` endpoint was added with no `@require_admin` decorator, while every other admin route in the file has one.
 
 **SentinelPR finding:**
-<!-- SCREENSHOT: pr1 SentinelPR comment -->
+
+<img width="2302" height="1666" alt="Screenshot 2026-05-14 191148" src="https://github.com/user-attachments/assets/dc700182-bb17-48df-9378-ac32972acba8" />
 
 
 **Bandit + Semgrep output** (flag only `secret_key` / `debug=True`, miss the access control bug):
-<!-- SCREENSHOT: pr1 bandit + semgrep -->
+
 
 ### PR 2 — IDOR
 `GET /orders/<id>` is gated by `@login_required` but never checks that the order belongs to the requesting user. Any logged-in user can read any order.
