@@ -4,7 +4,7 @@ This repository is an empirical test of a single claim:
 
 > **Pattern-matching static analyzers (Semgrep, Bandit) cannot detect intent-level security vulnerabilities. An LLM agent can.**
 
-It contains a small Flask app with a consistent, correct authorization pattern — then five pull requests, each introducing one *intent-level* ("Bucket 2") vulnerability. Each PR was reviewed by three tools: **Bandit**, **Semgrep**, and **[SentinelPR](https://github.com/Aryan2659/sentinelpr-)** (an agentic LLM security reviewer).
+It contains a small Flask app with a consistent, correct authorization pattern — then five pull requests, each introducing one *intent-level* ("Bucket 2") vulnerability. Each PR was reviewed by three tools: **Bandit**, **Semgrep**, and **[SentinelPR](https://github.com/Aryan2659/sentinelpr)** (an agentic LLM security reviewer).
 
 ## Results
 
@@ -134,4 +134,4 @@ SentinelPR's reviews are visible as inline comments on each pull request in this
 
 ## What this is part of
 
-SentinelPR — an agentic GitHub App that reviews pull requests for intent-level security vulnerabilities. Code and architecture: **https://github.com/Aryan2659/sentinelpr-**
+SentinelPR — an agentic GitHub App that reviews pull requests for intent-level security vulnerabilities. Code and architecture: **https://github.com/Aryan2659/sentinelpr**
