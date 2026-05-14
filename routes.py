@@ -55,6 +55,14 @@ def admin_promote_user(user_id):
 def admin_list_orders():
     return jsonify(list(ORDERS.values()))
 
-
+@app.route('/users/<int:user_id>/update', methods=['POST'])
+@login_required
+def update_user_profile(user_id):
+    """Update a user's profile fields."""
+    data = request.get_json()
+    updated = update_user(user_id, **data)
+    if not updated:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(updated)
 if __name__ == '__main__':
     app.run(debug=True)
